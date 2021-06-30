@@ -40,10 +40,6 @@ const renderMap = () => {
 
 eventEmitter.on('updateObjects', renderMap)
 
-eventEmitter.on('updateObjects', () => {
-    console.log(objectsSelected)
-})
-
 const createCheckboxEl = (name, clickHandler) => {
     const labelEl = document.createElement('label')
     labelEl.className = 'filters-object-checkbox-label'
