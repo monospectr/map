@@ -12,33 +12,29 @@ let mainLayer
 
 const eventEmitter = new EventEmitter()
 
-const objectsSelected = new Set()
+const zonesSelected = new Set()
 
 const renderMap = () => {
     mainLayer.clearLayers()
 
-    data.paths.forEach((path, i) => {
-        if (!objectsSelected.has(path)) {
-            return
-        }
-
-        L.polygon(path.polygon, {
+    for (const zone of zonesSelected) {
+        L.polygon(zone.polygon, {
             color: `rgba(255, 255, 255, .5)`,
             fillColor: `rgba(255, 255, 0, 1)`,
             weight: 1,
             // fillColor: 'none'
         }).addTo(mainLayer)
 
-        polygonToPoints(path.polygon).forEach((point, i) => {
+        polygonToPoints(zone.polygon).forEach((point, i) => {
             L.circleMarker(point, {
                 radius: 2,
                 color: 'rgb(255, 255, 255)'
-            }).bindTooltip(`${path.fullName}: ${i}`).addTo(mainLayer);
+            }).bindTooltip(`${zone.fullName}: ${i}`).addTo(mainLayer);
         })
-    })
+    }
 }
 
-eventEmitter.on('updateObjects', renderMap)
+eventEmitter.on('updateZones', renderMap)
 
 const createCheckboxEl = (name, clickHandler) => {
     const labelEl = document.createElement('label')
@@ -60,48 +56,48 @@ const createCheckboxEl = (name, clickHandler) => {
 }
 
 const renderFilters = () => {
-    for (const [groupName, polygons] of groupMapBy(data.paths, item => item.name)) {
-        const groupEl = document.createElement('div')
-        groupEl.style.marginBottom = '10px'
+    for (const [objectName, zones] of groupMapBy(data.zones, zone => zone.objectName)) {
+        const objectEl = document.createElement('div')
+        objectEl.style.marginBottom = '10px'
 
-        const groupCheckboxEl = createCheckboxEl(groupName, checked => {
+        const objectCheckboxEl = createCheckboxEl(objectName, checked => {
             if (checked) {
-                polygons.forEach(polygon => objectsSelected.add(polygon))
+                zones.forEach(zone => zonesSelected.add(zone))
             } else {
-                polygons.forEach(polygon => objectsSelected.delete(polygon))
+                zones.forEach(zone => zonesSelected.delete(zone))
             }
 
-            eventEmitter.emit('updateObjects')
+            eventEmitter.emit('updateZones')
         })
 
-        eventEmitter.on('updateObjects', () => {
-            groupCheckboxEl.querySelector('input').checked = polygons.every(polygon => objectsSelected.has(polygon))
+        eventEmitter.on('updateZones', () => {
+            objectCheckboxEl.querySelector('input').checked = zones.every(zone => zonesSelected.has(zone))
         })
 
-        const polygonsEl = document.createElement('div')
-        polygonsEl.style.paddingLeft = '25px'
+        const zoneEl = document.createElement('div')
+        zoneEl.style.paddingLeft = '25px'
 
-        for (const polygon of polygons) {
-            const polygonCheckboxEl = createCheckboxEl(polygon.fullName, checked => {
+        for (const zone of zones) {
+            const polygonCheckboxEl = createCheckboxEl(zone.name || '—', checked => {
                 if (checked) {
-                    objectsSelected.add(polygon)
+                    zonesSelected.add(zone)
                 } else {
-                    objectsSelected.delete(polygon)
+                    zonesSelected.delete(zone)
                 }
 
-                eventEmitter.emit('updateObjects')
+                eventEmitter.emit('updateZones')
             })
 
-            eventEmitter.on('updateObjects', () => {
-                polygonCheckboxEl.querySelector('input').checked = objectsSelected.has(polygon)
+            eventEmitter.on('updateZones', () => {
+                polygonCheckboxEl.querySelector('input').checked = zonesSelected.has(zone)
             })
 
-            polygonsEl.append(polygonCheckboxEl)
+            zoneEl.append(polygonCheckboxEl)
         }
 
-        groupEl.append(groupCheckboxEl, polygonsEl)
+        objectEl.append(objectCheckboxEl, zoneEl)
 
-        filtersEl.append(groupEl)
+        filtersEl.append(objectEl)
     }
 }
 
@@ -135,9 +131,8 @@ fileEl.addEventListener('change', async e => {
         zoomOffset: -1
     }).addTo(map)
 
+    renderMap()
     renderFilters()
-
-    // console.log(data)
 
     L.polygon(data.boundingBox, {
         color: `rgba(255, 255, 0, .5)`,

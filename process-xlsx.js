@@ -4,10 +4,10 @@ import { flipLngLatDeep, closePath } from './helpers/geo-utils.js'
 import { convertCellCoords } from './helpers/format-parsers.js'
 import { pipe } from './helpers/pipe.js'
 
-const genId = (() => {
+/*const genId = (() => {
     let i = 0
     return () => i++
-})()
+})()*/
 
 export const processXlsx = async (buffer) => {
     const workbook = new ExcelJS.Workbook()
@@ -21,7 +21,7 @@ export const processXlsx = async (buffer) => {
     // Индекс ячейки, которую нужно вырезать
     let lastPathIndex = -1
     let cutPath = null
-    const paths = []
+    const zones = []
 
     rows.forEach((row, i) => {
         const [idCell, nameCell, lvl1Cell, lvl2Cell, lvl3OrCutMarkerCell, radiusCell, pathCells] = segmentArray(
@@ -55,7 +55,7 @@ export const processXlsx = async (buffer) => {
 
         if (isCut) {
             cutPath = cutPath ? turf.union(cutPath, feature) : feature
-            const lastPath = paths.find(path => path.index === lastPathIndex)
+            const lastPath = zones.find(path => path.index === lastPathIndex)
             lastPath.feature = turf.mask(cutPath, lastPath.feature)
             return
         }
@@ -64,10 +64,10 @@ export const processXlsx = async (buffer) => {
         lastPathIndex = i
         combinedPath = combinedPath ? turf.union(combinedPath, feature) : feature
 
-        paths.push({
+        zones.push({
             index: i,
-            name,
-            fullName: [name, lvl1, lvl2, lvl3].filter(Boolean).join('. '),
+            name: [lvl1, lvl2, lvl3].filter(Boolean).join('. '),
+            objectName: name,
             lvl2Cell: lvl2Cell[0].value,
             feature
         })
@@ -76,9 +76,8 @@ export const processXlsx = async (buffer) => {
     return {
         combinedPath: flipLngLatDeep(combinedPath.geometry.coordinates),
         boundingBox: flipLngLatDeep(turf.bboxPolygon(turf.bbox(combinedPath)).geometry.coordinates),
-        paths: paths.map(({ feature, ...pathInfo }) => ({
+        zones: zones.map(({ feature, ...pathInfo }) => ({
             ...pathInfo,
-            id: genId(),
             polygon: flipLngLatDeep(feature.geometry.coordinates)
         }))
     }
