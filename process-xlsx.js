@@ -4,13 +4,18 @@ import { flipLngLatDeep, closePath } from './helpers/geo-utils.js'
 import { convertCellCoords } from './helpers/format-parsers.js'
 import { pipe } from './helpers/pipe.js'
 
+const genId = (() => {
+    let i = 0
+    return () => i++
+})()
+
 export const processXlsx = async (buffer) => {
     const workbook = new ExcelJS.Workbook()
     await workbook.xlsx.load(buffer)
     const worksheet = workbook.worksheets.find(worksheet => worksheet.state === 'visible')
     const rows = worksheet.getRows(4, worksheet.rowCount)
 
-    console.log('rows', rows)
+    // console.log('rows', rows)
 
     let combinedPath
     // Индекс ячейки, которую нужно вырезать
@@ -73,6 +78,7 @@ export const processXlsx = async (buffer) => {
         boundingBox: flipLngLatDeep(turf.bboxPolygon(turf.bbox(combinedPath)).geometry.coordinates),
         paths: paths.map(({ feature, ...pathInfo }) => ({
             ...pathInfo,
+            id: genId(),
             polygon: flipLngLatDeep(feature.geometry.coordinates)
         }))
     }

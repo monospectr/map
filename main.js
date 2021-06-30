@@ -1,42 +1,24 @@
-import { convertCoords } from './helpers/convert-coords.js'
 import { processXlsx } from './process-xlsx.js'
-
-const polygonToPoints = polygon => {
-    const list = []
-
-    const fn = (arr) => {
-        if (!Array.isArray(arr)) {
-            throw new Error(`Должен быть массивом: «${arr}»`)
-        }
-
-        if (arr.every(Array.isArray)) {
-            arr.forEach(fn)
-        } else if (typeof arr[0] === 'number' && typeof arr[1] === 'number') {
-            list.push(arr)
-        } else {
-            throw new Error(`Неверный формат: «${arr}»`)
-        }
-    }
-
-    fn(polygon)
-
-    return list
-}
+import { polygonToPoints } from './helpers/polygon-to-points.js'
+import { groupMapBy } from './helpers/group-map-by.js'
+import { EventEmitter } from './helpers/event-emitter.js'
 
 const fileEl = document.getElementById('file')
 const mapCoverEl = document.getElementById('map')
 const filtersEl = document.getElementById('filters')
 
-const objectsSelected = new Set()
-
 let data
 let mainLayer
+
+const eventEmitter = new EventEmitter()
+
+const objectsSelected = new Set()
 
 const renderMap = () => {
     mainLayer.clearLayers()
 
     data.paths.forEach((path, i) => {
-        if (!objectsSelected.has(path.name)) {
+        if (!objectsSelected.has(path)) {
             return
         }
 
@@ -56,31 +38,75 @@ const renderMap = () => {
     })
 }
 
+eventEmitter.on('updateObjects', renderMap)
+
+eventEmitter.on('updateObjects', () => {
+    console.log(objectsSelected)
+})
+
+const createCheckboxEl = (name, clickHandler) => {
+    const labelEl = document.createElement('label')
+    labelEl.className = 'filters-object-checkbox-label'
+
+    const checkboxEl = document.createElement('input')
+    checkboxEl.setAttribute('type', 'checkbox')
+    checkboxEl.addEventListener('click', e => {
+        e.preventDefault()
+        clickHandler(e.currentTarget.checked)
+    })
+
+    const nameEl = document.createElement('span')
+    nameEl.textContent = name
+
+    labelEl.append(checkboxEl, nameEl)
+
+    return labelEl
+}
+
 const renderFilters = () => {
-    const names = [...new Set(data.paths.map(path => path.name))]
+    for (const [groupName, polygons] of groupMapBy(data.paths, item => item.name)) {
+        const groupEl = document.createElement('div')
+        groupEl.style.marginBottom = '10px'
 
-    names.forEach(name => {
-        const labelEl = document.createElement('label')
-        labelEl.className = 'filters-object-checkbox-label'
-
-        const checkboxEl = document.createElement('input')
-        checkboxEl.setAttribute('type', 'checkbox')
-        checkboxEl.addEventListener('click', () => {
-            if (objectsSelected.has(name)) {
-                objectsSelected.delete(name)
+        const groupCheckboxEl = createCheckboxEl(groupName, checked => {
+            if (checked) {
+                polygons.forEach(polygon => objectsSelected.add(polygon))
             } else {
-                objectsSelected.add(name)
+                polygons.forEach(polygon => objectsSelected.delete(polygon))
             }
 
-            renderMap()
+            eventEmitter.emit('updateObjects')
         })
 
-        const nameEl = document.createElement('span')
-        nameEl.textContent = name
+        eventEmitter.on('updateObjects', () => {
+            groupCheckboxEl.querySelector('input').checked = polygons.every(polygon => objectsSelected.has(polygon))
+        })
 
-        labelEl.append(checkboxEl, nameEl)
-        filtersEl.append(labelEl)
-    })
+        const polygonsEl = document.createElement('div')
+        polygonsEl.style.paddingLeft = '25px'
+
+        for (const polygon of polygons) {
+            const polygonCheckboxEl = createCheckboxEl(polygon.fullName, checked => {
+                if (checked) {
+                    objectsSelected.add(polygon)
+                } else {
+                    objectsSelected.delete(polygon)
+                }
+
+                eventEmitter.emit('updateObjects')
+            })
+
+            eventEmitter.on('updateObjects', () => {
+                polygonCheckboxEl.querySelector('input').checked = objectsSelected.has(polygon)
+            })
+
+            polygonsEl.append(polygonCheckboxEl)
+        }
+
+        groupEl.append(groupCheckboxEl, polygonsEl)
+
+        filtersEl.append(groupEl)
+    }
 }
 
 fileEl.addEventListener('change', async e => {
@@ -115,7 +141,7 @@ fileEl.addEventListener('change', async e => {
 
     renderFilters()
 
-    console.log(data)
+    // console.log(data)
 
     L.polygon(data.boundingBox, {
         color: `rgba(255, 255, 0, .5)`,
