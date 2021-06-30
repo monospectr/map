@@ -29,7 +29,7 @@ const renderMap = () => {
             L.circleMarker(point, {
                 radius: 2,
                 color: 'rgb(255, 255, 255)'
-            }).bindTooltip(`${zone.fullName}: ${i}`).addTo(mainLayer);
+            }).bindTooltip([zone.objectName, zone.name, `Точка ${i}`].join('<br />')).addTo(mainLayer);
         })
     }
 }
@@ -44,7 +44,11 @@ const createCheckboxEl = (name, clickHandler) => {
     checkboxEl.setAttribute('type', 'checkbox')
     checkboxEl.addEventListener('click', e => {
         e.preventDefault()
-        clickHandler(e.currentTarget.checked)
+        const checked = e.currentTarget.checked
+
+        setTimeout(() => {
+            clickHandler(checked)
+        }, 0)
     })
 
     const nameEl = document.createElement('span')
@@ -75,7 +79,6 @@ const renderFilters = () => {
         })
 
         const zoneEl = document.createElement('div')
-        zoneEl.style.paddingLeft = '25px'
 
         for (const zone of zones) {
             const polygonCheckboxEl = createCheckboxEl(zone.name || '—', checked => {
@@ -87,6 +90,8 @@ const renderFilters = () => {
 
                 eventEmitter.emit('updateZones')
             })
+
+            polygonCheckboxEl.style.paddingLeft = '30px'
 
             eventEmitter.on('updateZones', () => {
                 polygonCheckboxEl.querySelector('input').checked = zonesSelected.has(zone)
@@ -120,7 +125,6 @@ fileEl.addEventListener('change', async e => {
     mainLayer = L.layerGroup().addTo(map)
 
     L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
-        maxZoom: 18,
         attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
             '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
             'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',

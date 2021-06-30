@@ -1,32 +1,32 @@
 export class EventEmitter {
-    #events = new Map()
+    constructor() {
+        this._events = new Map()
+    }
 
     on(event, listener) {
-        if (!this.#events.has(event)) {
-            this.#events.set(event, new Set())
+        if (!this._events.has(event)) {
+            this._events.set(event, new Set())
         }
 
-        this.#events.get(event).add(listener)
+        this._events.get(event).add(listener)
         return () => this.off(event, listener)
     }
 
     off(event, listener) {
         if (event === undefined && listener === undefined) {
-            this.#events.clear()
+            this._events.clear()
         } else if (listener === undefined) {
-            this.#events.delete(event)
-        } else if (this.#events.get(event).has(listener)) {
-            this.#events.get(event).delete(listener)
+            this._events.delete(event)
+        } else if (this._events.get(event).has(listener)) {
+            this._events.get(event).delete(listener)
         }
     }
 
     emit(event, ...args) {
-        if (this.#events.has(event)) {
-            setTimeout(() => {
-                for (const listener of this.#events.get(event)) {
-                    listener(...args)
-                }
-            }, 0)
+        if (this._events.has(event)) {
+            for (const listener of this._events.get(event)) {
+                listener(...args)
+            }
         }
     }
 
