@@ -1,7 +1,7 @@
 export const polygonToPoints = polygon => {
     const list = []
 
-    const fn = (arr) => {
+    const fn = arr => {
         if (!Array.isArray(arr)) {
             throw new Error(`Должен быть массивом: «${arr}»`)
         }

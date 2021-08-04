@@ -4,6 +4,12 @@ proj4.defs('WGS84', '+title=WGS 84 (long/lat) +proj=longlat +ellps=WGS84 +datum=
 
 const dmsToDecDegrees = (degrees, minutes, seconds) => degrees + minutes / 60 + seconds / 3600
 
+/**
+ * Конвертирует координаты вида [градусы, минуты, секунды] в численные значения
+ * @param lat {[number, number, number]} Широта
+ * @param long {[number, number, number]} Долгота
+ * @returns {[number, number]} [Широта, Долгота]
+ */
 export const convertCoords = (lat, long) => {
     const [newLong, newLat] = proj4('EPSG:4740', 'EPSG:4326', [dmsToDecDegrees(...long), dmsToDecDegrees(...lat)])
     return [newLat, newLong]

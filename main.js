@@ -4,6 +4,7 @@ import { groupMapBy } from './helpers/group-map-by.js'
 import { EventEmitter } from './helpers/event-emitter.js'
 
 const fileEl = document.getElementById('file')
+const errorsEl = document.getElementById('errors');
 const mapCoverEl = document.getElementById('map')
 const filtersEl = document.getElementById('filters')
 
@@ -110,46 +111,56 @@ fileEl.addEventListener('change', async e => {
     const file = e.target.files[0]
     const buffer = await file.arrayBuffer()
 
-    data = await processXlsx(buffer)
+    console.log(11)
 
-    mapCoverEl.classList.remove('g-hidden')
-    fileEl.classList.add('g-hidden')
+    try {
+        data = await processXlsx(buffer)
 
-    const russiaBoundingBox = [
-        [73.21470709028688, 176.6368103027344],
-        [55.65415394402894, 28.98056030273438],
-    ]
+        console.log('data', data)
 
-    const map = L.map('map-el').fitBounds(russiaBoundingBox)
+        mapCoverEl.classList.remove('g-hidden')
+        fileEl.classList.add('g-hidden')
 
-    mainLayer = L.layerGroup().addTo(map)
+        const russiaBoundingBox = [
+            [73.21470709028688, 176.6368103027344],
+            [55.65415394402894, 28.98056030273438],
+        ]
 
-    L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
-        attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
-            '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-            'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-        id: 'mapsosc-b667cf5a',
-        subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-        detectRetina: true,
-        tileSize: 512,
-        zoomOffset: -1
-    }).addTo(map)
+        const map = L.map('map-el').fitBounds(russiaBoundingBox)
 
-    renderMap()
-    renderFilters()
+        mainLayer = L.layerGroup().addTo(map)
 
-    L.polygon(data.boundingBox, {
-        color: `rgba(255, 255, 0, .5)`,
-        weight: 1,
-        fillColor: 'none'
-    }).addTo(map)
+        L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
+            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
+                '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+                'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+            id: 'mapsosc-b667cf5a',
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+            detectRetina: true,
+            tileSize: 512,
+            zoomOffset: -1
+        }).addTo(map)
 
-    map.fitBounds([data.boundingBox[0], data.boundingBox[2]])
+        renderMap()
+        renderFilters()
 
-    /*L.polygon(data.combinedPath, {
-        color: `rgba(255, 255, 0, .5)`,
-        weight: 1,
-        fillColor: 'none'
-    }).addTo(map)*/
+        L.polygon(data.boundingBox, {
+            color: `rgba(255, 255, 0, .5)`,
+            weight: 1,
+            fillColor: 'none'
+        }).addTo(map)
+
+        map.fitBounds([data.boundingBox[0], data.boundingBox[2]])
+
+        /*L.polygon(data.combinedPath, {
+            color: `rgba(255, 255, 0, .5)`,
+            weight: 1,
+            fillColor: 'none'
+        }).addTo(map)*/
+    } catch (e) {
+        console.dir(e)
+        errorsEl.classList.remove('g-hidden')
+        errorsEl.textContent = e.message
+    }
 })
 

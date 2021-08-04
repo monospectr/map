@@ -1,4 +1,4 @@
-export const getCells = (row) => {
+export const getCells = row => {
     const cells = []
 
     row.eachCell({ includeEmpty: true }, cell => {

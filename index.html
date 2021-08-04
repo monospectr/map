@@ -5,7 +5,7 @@
 	<title>Title</title>
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
 	<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-	<script src="https://unpkg.com/@turf/turf@6.3.0/turf.min.js"></script>
+	<script src="https://unpkg.com/@turf/turf@latest/turf.min.js"></script>
 	<script src="https://unpkg.com/exceljs@4.2.1/dist/exceljs.min.js"></script>
 	<script src="https://unpkg.com/proj4@2.7.4/dist/proj4.js"></script>
 	<style>
@@ -32,7 +32,7 @@
 	        padding: 10px;
 	        border-radius: 10px;
 	        cursor: pointer;
-	        transform: scale(0.9);
+	        transform: scale(0.95);
 	        transition: transform 200ms;
         }
 
@@ -120,7 +120,10 @@
 <body>
 
 <div class="form">
-	<input id="file" class="file" type="file" accept=".xlsx" />
+	<div>
+		<input id="file" class="file" type="file" accept=".xlsx" title="" />
+		<ul id="errors" class="errors g-hidden"></ul>
+	</div>
 </div>
 
 <div id="map" class="map g-hidden">
